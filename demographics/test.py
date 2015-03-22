@@ -48,6 +48,9 @@ class BirthDeathProcess:
         # Update the size.
         self.population += population_inc - population_dec
         self.population = max(0, self.population)
+        if self.population < 2: # population collapse, assuming sexual reproduction
+          self.birth_rate = 0
+          self.deadth_rate = 0
 
         # Return some state.
         return (self.population, population_inc, population_dec)
@@ -100,19 +103,19 @@ class Container:
         return df
 
 if __name__ == "__main__":
-
     # Create container.
     c = Container()    
-    p = BirthDeathProcess(0.001, 0.0003, 100)
+    p = BirthDeathProcess(0.001, 0.00075, 16)
 
     # Add process.
-    c.add_process('demographics', p, monitor=['population'])
+    c.add_process('birth_death_process', p, monitor=['population'])
 
     # Run.
-    for i in range(10):
+    x = 'birth_death_process.population';
+    for i in range(16):
         c.reset()
-        d = c.run()
-        d['demographics.population'].plot()
-        
+        d = c.run(10000)
+        print('Run %2d: Final population: %6d' % (i+1, d[x].tail(1)))
+        d[x].plot()
     plt.show()
-    
+
