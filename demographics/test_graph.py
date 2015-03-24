@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import networkx as nx
 import matplotlib.pyplot as plt
-
+import ast
 
 class BaseContainer:
     """
@@ -106,40 +106,34 @@ class Society(BaseAgent):
         [h.step() for h in self._graph.successors(self)]
         
         # Get birth-death rates by context.
-        birth_rate = context.get('birth-rate', 0.001)
-        death_rates = []
-        death_rates.append(context.get('death-rate-0', 0.000001))
-        death_rates.append(context.get('death-rate-1', 0.00001))
-        death_rates.append(context.get('death-rate-2', 0.0001))
-        death_rates.append(context.get('death-rate-3', 0.001))
-        death_rates.append(context.get('death-rate-4', 0.01))
-        death_rates.append(context.get('death-rate-5', 0.1))
+        birth_rate = context.get('birth-rate')
+        death_structure = context.get('death-structure')
                 
         # Compute the increase.
-        population_inc = np.random.binomial(self.population, birth_rate)
+        population_inc = np.random.binomial(self.population, birth_rate)  # TODO: use population in reproductive age only
 
-        # TODO: This should be somthing easy to ask in some graph tool.
-        pops = []
-        pops.append([h for h in self._graph.successors(self) if h.age < 10])
-        pops.append([h for h in self._graph.successors(self) if (h.age < 30) and (h.age >= 10)])
-        pops.append([h for h in self._graph.successors(self) if (h.age < 50) and (h.age >= 30)])
-        pops.append([h for h in self._graph.successors(self) if (h.age < 70) and (h.age >= 50)])
-        pops.append([h for h in self._graph.successors(self) if (h.age < 90) and (h.age >= 70)])
-        pops.append([h for h in self._graph.successors(self) if h.age >= 90])
-        
-        # Compute the decrease.
-        for i in range(6):
-            population_dec = np.random.binomial(len(pops[i]), death_rates[i])
-
-            # Pick randomly humans.
-            # TODO: pick according to some age distributional from context.
-            if population_dec > 0:
-                deceases = np.random.choice(pops[i], population_dec, replace=False)
-                [self.remove_human(h) for h in deceases]
-        
         # Add new humans, half and half.
         self.add_humans_in_batch(population_inc)
                 
+        # TODO: This should be somthing easy to ask in some graph tool.
+        total_dec = 0
+        for range in death_structure:
+            age_min = range[0]
+            age_max = range[1]
+            pr_death = range[2]
+            pop = [h for h in self._graph.successors(self) if h.age >= age_min and h.age <= age_max]
+        
+            # Compute the decrease.
+            population_dec = np.random.binomial(len(pop), pr_death)
+            total_dec += population_dec
+
+            # Pick randomly humans.
+            if population_dec > 0:
+                deceases = np.random.choice(pop, population_dec, replace=False)
+                [self.remove_human(h) for h in deceases]
+        
+        #print("population %6d: offset %3d-%3d=%3d" % (self.population, population_inc, total_dec, population_inc - total_dec ))
+
     # TODO: do we want to combine the 'admin' property with 'data-simulation' properties?
     @property
     def population(self):
@@ -163,6 +157,14 @@ class Human(BaseAgent):
 
 if __name__ == "__main__":
 
+    # read context from file
+    try:
+        with open('society.context', 'r') as f:
+            s = f.read()
+            context = ast.literal_eval(s)
+    except:
+        pass
+
     for i in range(10):
     
         # Create container.
@@ -177,24 +179,22 @@ if __name__ == "__main__":
         
         for j in range(500):
             population.append(s.population)
-            c.step({'birth-rate': 0.01,
-                    'death-rate-0': 0.000000001,
-                    'death-rate-1': 0.00000001,
-                    'death-rate-2': 0.0000001,
-                    'death-rate-3': 0.0001,
-                    'death-rate-4': 0.01,
-                    'death-rate-5': 0.2, })
+            c.step(context)
             
         print('Run %2d: Final population: %6d' % (i + 1, population[-1]))
 
         # Plot population
         plt.subplot(211)
         plt.plot(population)
+        plt.xlabel('Time')
+        plt.ylabel('Population')
         plt.grid()
 
         # Plot distribution.
         plt.subplot(212)
         plt.plot(*zip(*s.population_distribution))
+        plt.xlabel('Age')
+        plt.ylabel('Population')
         plt.grid()        
 
     plt.show()
