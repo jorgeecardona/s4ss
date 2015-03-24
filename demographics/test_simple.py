@@ -3,18 +3,20 @@ import matplotlib.pyplot as plt
 
 
 class Demographics:
-    def __init__(self, initial_population=10000):
+    # Assume a global initial distribution.
+    # http://www.indexmundi.com/world/age_structure.html
+    def __init__(self, 
+                 initial_population=10000, 
+                 age_structure=[(0, 14, 0.2579), (15, 24, 0.1661), (25, 54, 0.4078), (55, 64, 0.0851), (65, 90, 0.0832)]):
 
-        # Assume a global initial distribution.
-        # http://www.indexmundi.com/world/age_structure.html
-        age_structure = [(0, 14, 0.2579), (15, 24, 0.1661), (25, 54, 0.4078), (55, 64, 0.0851), (65, 90, 0.0832)]
+        self.max_age = 120
+        self.min_age_to_reproduce = 12
+        self.density = self.generate(initial_population, age_structure)
 
-        self.density = self.generate(initial_population)
-
-    def generate(self, n, structure=[(0, 14, 0.2579), (15, 24, 0.1661), (25, 54, 0.4078), (55, 64, 0.0851), (65, 90, 0.0832)]):
+    def generate(self, n, structure):
 
         # Create a density.
-        density = [0] * 120
+        density = [0] * self.max_age
 
         for section in structure:
 
@@ -25,20 +27,20 @@ class Demographics:
 
         return density
 
-    def step(self, facts={'birth-rate': 18.7 / 1000, 'death-rate': 7.89 / 1000}):
+    def step(self, facts):
         # Default data from: http://www.indexmundi.com/world/birth_rate.html and http://www.indexmundi.com/world/death_rate.html
 
         # Deaths.
         for section in facts['death-structure']:
-            for age in range(section[0], min(section[1] + 1, 120)):
+            for age in range(section[0], min(section[1] + 1, self.max_age)):
                 if self.density[age] > 0:
-                    self.density[age] -= np.random.binomial(self.density[age], section[2])
+                    self.density[age] = max(0, self.density[age] - np.random.binomial(self.density[age], section[2]))
 
         # Increase everyone's age.
-        self.density = [0] + self.density[:119]
+        self.density = [0] + self.density[:(self.max_age-1)] # all individuals at max_age
                     
         # New borns.
-        if sum(self.density) > 0:
+        if sum(self.density[:self.min_age_to_reproduce]) > 0:
             self.density[0] += np.random.binomial(sum(self.density), facts['birth-rate'])
 
 
@@ -55,6 +57,8 @@ if __name__ == "__main__":
         d = Demographics()
         d.run()
         plt.plot(d.density)
+        plt.xlabel('Age')
+        plt.ylabel('Population size')
 
     plt.grid()
     plt.show()
