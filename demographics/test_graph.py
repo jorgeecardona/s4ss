@@ -132,7 +132,7 @@ class Society(BaseAgent):
                 deceases = np.random.choice(pop, population_dec, replace=False)
                 [self.remove_human(h) for h in deceases]
         
-        #print("population %6d: offset %3d-%3d=%3d" % (self.population, population_inc, total_dec, population_inc - total_dec ))
+        print("population: %6d, offset: %3d births - %3d deaths = %3d" % (self.population, population_inc, total_dec, population_inc - total_dec ))
 
     # TODO: do we want to combine the 'admin' property with 'data-simulation' properties?
     @property
@@ -158,6 +158,7 @@ class Human(BaseAgent):
 if __name__ == "__main__":
 
     # read context from file
+    context = {}
     try:
         with open('society.context', 'r') as f:
             s = f.read()
@@ -179,7 +180,10 @@ if __name__ == "__main__":
         
         for j in range(500):
             population.append(s.population)
-            c.step(context)
+            if context:
+                c.step(context)
+            else:
+                c.step()
             
         print('Run %2d: Final population: %6d' % (i + 1, population[-1]))
 

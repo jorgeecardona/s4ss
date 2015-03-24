@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-
+import ast
 
 class Demographics:
     # Assume a global initial distribution.
@@ -52,10 +52,23 @@ class Demographics:
 
 if __name__ == "__main__":
 
+    # read context from file
+    context = {}
+    try:
+        with open('society.context', 'r') as f:
+            s = f.read()
+            context = ast.literal_eval(s)
+    except:
+        pass
+
+    n = 200
     for i in range(10):
         # Create a Demographics
         d = Demographics()
-        d.run()
+        if context:
+            d.run(n, context)
+        else:
+            d.run(n)
         plt.plot(d.density)
         plt.xlabel('Age')
         plt.ylabel('Population size')
