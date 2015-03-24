@@ -28,21 +28,21 @@ class Demographics:
     def step(self, facts={'birth-rate': 18.7 / 1000, 'death-rate': 7.89 / 1000}):
         # Default data from: http://www.indexmundi.com/world/birth_rate.html and http://www.indexmundi.com/world/death_rate.html
 
-        # Increase everyone's age.
-        self.density = [0] + self.density[:119]
-
         # Deaths.
         for section in facts['death-structure']:
             for age in range(section[0], min(section[1] + 1, 120)):
                 if self.density[age] > 0:
                     self.density[age] -= np.random.binomial(self.density[age], section[2])
 
+        # Increase everyone's age.
+        self.density = [0] + self.density[:119]
+                    
         # New borns.
         if sum(self.density) > 0:
             self.density[0] += np.random.binomial(sum(self.density), facts['birth-rate'])
 
 
-    def run(self, n=1000, facts={'birth-rate': 18.7 / 1000, 'death-structure': [(0, 0, 7.09 / 1000), (1, 14, 0.425 / 1000), (15, 24, 0.75 / 1000), (25, 54, 7.04 / 1000), (55, 64, 8.87 / 1000), (65, 74, 20.28 / 1000), (75, 84, 51.75 / 1000), (85, 200, 205.0 / 1000)]}):
+    def run(self, n=200, facts={'birth-rate': 18.7 / 1000, 'death-structure': [(0, 0, 7.09 / 1000), (1, 14, 0.425 / 1000), (15, 24, 0.75 / 1000), (25, 54, 7.04 / 1000), (55, 64, 8.87 / 1000), (65, 74, 20.28 / 1000), (75, 84, 51.75 / 1000), (85, 200, 205.0 / 1000)]}):
         # Death structure taken from: https://www.census.gov/compendia/statab/2012/tables/12s0110.pdf
 
         for i in range(n):
