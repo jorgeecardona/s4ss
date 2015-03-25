@@ -35,7 +35,7 @@ class BaseContainer:
         [n.step(context=context) for n in self._graph.successors(self)]
                         
 
-class BaseAgent:
+class BaseAgent(object):
     """
     Agent
     =====
@@ -98,6 +98,7 @@ class Society(BaseAgent):
 
     def remove_human(self, h):
         self._graph.remove_edge(self, h)
+        h.kill()
                
     def step(self, context={}):
         # A single step will do a lot of things: birth-death, ...
@@ -147,6 +148,16 @@ class Society(BaseAgent):
         return []
                 
 class Human(BaseAgent):
+
+    _corpses = []
+
+    def __new__(cls, *args, **kwargs):
+        # Reuse a corpse.
+        if len(cls._corpses) > 0:
+            h = cls._corpses.pop()
+            return h
+        return object.__new__(Human, *args, **kwargs)
+            
     def __init__(self, gender):
         # Human attributes.
         self.age = 0
@@ -155,6 +166,10 @@ class Human(BaseAgent):
     def step(self):
         self.age += 1                
 
+    def kill(self):
+        self.age = -1
+        self._corpses.append(self)        
+        
 if __name__ == "__main__":
 
     # read context from file
@@ -166,7 +181,7 @@ if __name__ == "__main__":
     except:
         pass
 
-    for i in range(10):
+    for i in range(1):
     
         # Create container.
         c = BaseContainer()
@@ -201,5 +216,5 @@ if __name__ == "__main__":
         plt.ylabel('Population')
         plt.grid()        
 
-    plt.show()
+#    plt.show()
     
